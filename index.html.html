@@ -63,6 +63,16 @@
         #fdf6e3 20px
       );
     }
+
+    #shareButtons {
+      display: none;
+      text-align: center;
+    }
+
+    #shareButtons button {
+      margin: 5px;
+      background-color: #6d4c41;
+    }
   </style>
 </head>
 <body>
@@ -92,6 +102,12 @@
 
   <canvas id="certificateCanvas" width="700" height="500" style="display:none;"></canvas>
 
+  <div id="shareButtons">
+    <button onclick="shareWhatsApp()">Share via WhatsApp</button>
+    <button onclick="shareLinkedIn()">Share on LinkedIn</button>
+    <button onclick="shareBluetooth()">Share via Bluetooth</button>
+  </div>
+
   <script>
     function generateCertificate() {
       const name = document.getElementById("name").value.trim();
@@ -110,8 +126,11 @@
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Background
-      ctx.fillStyle = "#fff8dc";
+      // Background gradient
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, "#fff8dc");
+      gradient.addColorStop(1, "#fdf6e3");
+      ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Border
@@ -119,10 +138,20 @@
       ctx.lineWidth = 8;
       ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
 
+      // Decorative badge
+      ctx.beginPath();
+      ctx.arc(canvas.width - 100, 100, 40, 0, 2 * Math.PI);
+      ctx.fillStyle = "#d4af37";
+      ctx.fill();
+      ctx.font = "bold 16px Georgia";
+      ctx.fillStyle = "#fff";
+      ctx.textAlign = "center";
+      ctx.fillText("CERT", canvas.width - 100, 105);
+      ctx.closePath();
+
       // Title
       ctx.fillStyle = "#6d4c41";
       ctx.font = "36px Georgia";
-      ctx.textAlign = "center";
       ctx.fillText("Certificate of Completion", canvas.width / 2, 100);
 
       // Subtitle
@@ -148,24 +177,22 @@
       ctx.font = "18px Georgia";
       ctx.fillText("Date: " + date, canvas.width / 2, 370);
 
-      // Signature image (above the line)
+      // Signature image
       const signature = new Image();
       signature.onload = function () {
-        ctx.drawImage(signature, canvas.width / 2 - 60, 385, 120, 40); // centered above line
-        // Signature line
+        ctx.drawImage(signature, canvas.width / 2 - 60, 385, 120, 40);
         ctx.beginPath();
         ctx.moveTo(canvas.width / 2 - 100, 430);
         ctx.lineTo(canvas.width / 2 + 100, 430);
         ctx.strokeStyle = "#6d4c41";
         ctx.lineWidth = 1;
         ctx.stroke();
-
         ctx.font = "16px Georgia";
         ctx.fillText("Authorized Signature", canvas.width / 2, 455);
       };
-      signature.src = "signature.png"; // Make sure this file exists in the same folder
+      signature.src = "signature.png";
 
-      // Optional photo inside round frame
+      // Optional photo
       if (photoInput.files && photoInput.files[0]) {
         const reader = new FileReader();
         reader.onload = function (e) {
@@ -190,6 +217,8 @@
         };
         reader.readAsDataURL(photoInput.files[0]);
       }
+
+      showShareButtons();
     }
 
     function downloadCertificate() {
@@ -203,7 +232,26 @@
       link.href = canvas.toDataURL("image/png");
       link.click();
     }
-  </script>
 
-</body>
-</html>
+    function showShareButtons() {
+      document.getElementById("shareButtons").style.display = "block";
+    }
+
+    function shareWhatsApp() {
+      const url = `https://api.whatsapp.com/send?text=Check out my certificate!`;
+      window.open(url, "_blank");
+    }
+
+    function shareLinkedIn() {
+      const url = encodeURIComponent("https://your-portfolio-or-cert-site.com");
+      const text = encodeURIComponent("I just earned a certificate!");
+      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}&summary=${text}`, "_blank");
+    }
+
+    function shareBluetooth() {
+      const canvas = document.getElementById("certificateCanvas");
+      canvas.toBlob(blob => {
+        const file = new File([blob], "certificate.png", { type: "image/png" });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          navigator.share({
+            files: [file],
